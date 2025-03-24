@@ -31,7 +31,7 @@ check_install_geth() {
             echo "Failed to install geth"
             rm -rf $TMP_DIR
             return 1
-        }
+        fi
 
         # Cleanup
         cd - > /dev/null
