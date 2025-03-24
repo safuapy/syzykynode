@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# First check if geth is installed
+./node-control.sh install || exit 1
+
 # Configuration
 DATA_DIR="node1"
 NETWORK_ID=736

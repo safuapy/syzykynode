@@ -1,6 +1,49 @@
 #!/bin/bash
 DATA_DIR="node1"
 IPC_PATH="$DATA_DIR/geth.ipc"
+GETH_VERSION="1.10.15"
+GETH_URL="https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.10.15-8be800ff.tar.gz"
+
+check_install_geth() {
+    if ! command -v geth &> /dev/null; then
+        echo "Geth is not installed. Installing geth ${GETH_VERSION}..."
+        
+        # Create temporary directory
+        TMP_DIR=$(mktemp -d)
+        cd $TMP_DIR
+
+        # Download and extract geth
+        if ! curl -L -o geth.tar.gz $GETH_URL; then
+            echo "Failed to download geth"
+            rm -rf $TMP_DIR
+            return 1
+        fi
+
+        # Extract the archive
+        if ! tar xzf geth.tar.gz; then
+            echo "Failed to extract geth"
+            rm -rf $TMP_DIR
+            return 1
+        fi
+
+        # Move geth binary to /usr/local/bin
+        if ! sudo mv geth-linux-amd64-${GETH_VERSION}-8be800ff/geth /usr/local/bin/; then
+            echo "Failed to install geth"
+            rm -rf $TMP_DIR
+            return 1
+        }
+
+        # Cleanup
+        cd - > /dev/null
+        rm -rf $TMP_DIR
+
+        echo "Geth ${GETH_VERSION} installed successfully"
+        geth version
+    else
+        echo "Geth is already installed:"
+        geth version
+    fi
+}
 
 stop_node() {
     if [ -f "$DATA_DIR/node.pid" ]; then
@@ -89,6 +132,9 @@ check_connectivity() {
 }
 
 case "$1" in
+    install)
+        check_install_geth
+        ;;
     stop)
         stop_node
         ;;
@@ -114,9 +160,10 @@ case "$1" in
         check_connectivity
         ;;
     *)
-        echo "Usage: $0 {stop|status|enode|add-peer|remove-peer|peers|sync|check}"
+        echo "Usage: $0 {install|stop|status|enode|add-peer|remove-peer|peers|sync|check}"
         echo ""
         echo "Commands:"
+        echo "  install                 - Check and install geth if needed"
         echo "  stop                    - Stop the node"
         echo "  status                  - Check node status and see recent logs"
         echo "  enode                   - Display this node's enode URL"
